@@ -68,7 +68,8 @@
   .toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
   .toolbar input{flex:1;min-width:130px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.95rem;outline:none;}
   .filter-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-  .toolbar select{padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.85rem;background:#fff;color:var(--ink);outline:none;cursor:pointer;}
+  .speed-lbl{font-size:.82rem;color:var(--sub);font-weight:600;margin-left:auto;}
+  #speedSel{padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:99px;font-size:.82rem;font-weight:600;background:#fff;color:var(--ink);outline:none;cursor:pointer;}
   .chip{padding:6px 15px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;color:var(--sub);font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s;}
   .chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
 
@@ -229,12 +230,6 @@
   <section class="panel" id="panel-list">
     <div class="toolbar">
       <input id="searchBox" placeholder="🔍 搜索英文、中文或备注…">
-      <select id="speedSel" title="播放语速">
-        <option value="0.6">🐢 慢速 0.6x</option>
-        <option value="0.75">较慢 0.75x</option>
-        <option value="0.9">标准 0.9x</option>
-        <option value="1.1">较快 1.1x</option>
-      </select>
       <button class="btn btn-gray btn-sm" id="btnExport">导出备份</button>
       <button class="btn btn-gray btn-sm" onclick="document.getElementById('importFile').click()">导入</button>
       <input type="file" id="importFile" accept=".json" style="display:none">
@@ -246,6 +241,14 @@
       <button class="chip" data-filter="phrase">🔗 短语</button>
       <button class="chip" data-filter="sentence">💬 句子</button>
       <button class="chip" data-filter="mastered">✅ 已掌握</button>
+      <span class="speed-lbl">🐢 语速</span>
+      <select id="speedSel" title="播放语速">
+        <option value="0.45">极慢 0.45x</option>
+        <option value="0.6">慢速 0.6x</option>
+        <option value="0.75">较慢 0.75x</option>
+        <option value="0.9">标准 0.9x</option>
+        <option value="1.1">较快 1.1x</option>
+      </select>
     </div>
     <div id="wordList"></div>
   </section>
@@ -347,7 +350,7 @@ const QUIZ_KEY  = 'dailyWords.quiz.v1';
 const QACCENT_KEY = 'dailyWords.qaccent';
 const CUSTOM_KEY = 'dailyWords.custom.v1';
 const SPEED_KEY = 'dailyWords.speed';
-let curSpeed = parseFloat(localStorage.getItem(SPEED_KEY) || '0.75');
+let curSpeed = parseFloat(localStorage.getItem(SPEED_KEY) || '0.6');
 const keyOf = w => w.type + '|' + norm(w.word);
 const TYPE_NAME = { word:'单词', phrase:'短语', sentence:'句子' };
 const TYPE_ICON = { word:'🔤', phrase:'🔗', sentence:'💬' };
