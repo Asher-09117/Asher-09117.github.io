@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日英语单词本 · Daily Words</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --ink:#1e293b; --sub:#64748b;
+    --primary:#4f6ef7; --primary-d:#3b5de7; --green:#16a34a; --red:#dc2626;
+    --amber:#d97706; --purple:#7c3aed; --radius:14px; --shadow:0 6px 20px rgba(30,41,59,.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;}
+  body{background:var(--bg);color:var(--ink);min-height:100vh;}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 80px;}
+
+  header{text-align:center;padding:24px 0 12px;}
+  header h1{font-size:1.7rem;letter-spacing:1px;}
+  header p{color:var(--sub);margin-top:6px;font-size:.92rem;}
+  .date-today{color:var(--primary);font-weight:600;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0;}
+  .stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 6px;text-align:center;}
+  .stat .num{font-size:1.4rem;font-weight:700;}
+  .stat .lbl{font-size:.74rem;color:var(--sub);margin-top:2px;}
+  .stat.c-blue .num{color:var(--primary);}
+  .stat.c-purple .num{color:var(--purple);}
+  .stat.c-amber .num{color:var(--amber);}
+  .stat.c-green .num{color:var(--green);}
+
+  .tabs{display:flex;gap:8px;margin:14px 0 18px;}
+  .tab{flex:1;padding:11px 0;text-align:center;border-radius:10px;background:#e6eaf5;color:var(--sub);cursor:pointer;font-weight:600;border:none;font-size:.95rem;transition:.15s;}
+  .tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(79,110,247,.35);}
+
+  .panel{display:none;}
+  .panel.active{display:block;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:.85rem;color:var(--sub);margin-bottom:6px;font-weight:600;}
+  .field input,.field textarea{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:1rem;outline:none;transition:.15s;background:#fbfdff;}
+  .field textarea{resize:vertical;}
+  .field input:focus,.field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,110,247,.12);}
+  .hint{font-size:.78rem;color:var(--sub);margin-top:5px;}
+  .btn{display:inline-block;border:none;cursor:pointer;border-radius:10px;padding:12px 22px;font-size:1rem;font-weight:600;transition:.15s;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-d);}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-gray{background:#e2e8f0;color:var(--ink);}
+  .btn-sm{padding:6px 12px;font-size:.82rem;border-radius:8px;}
+
+  .msg{margin-top:12px;padding:11px 14px;border-radius:10px;font-size:.9rem;display:none;}
+  .msg.ok{display:block;background:#e8f7ee;color:var(--green);border:1px solid #bbe7cb;}
+  .msg.err{display:block;background:#fdecec;color:var(--red);border:1px solid #f5c2c2;}
+
+  .type-select{display:flex;gap:8px;margin-bottom:16px;}
+  .type-opt{flex:1;padding:10px 0;text-align:center;border-radius:10px;border:2px solid #e2e8f0;background:#fbfdff;cursor:pointer;font-weight:600;font-size:.9rem;color:var(--sub);transition:.15s;user-select:none;}
+  .type-opt.active[data-type="word"]{border-color:var(--primary);color:var(--primary);background:#eef2ff;}
+  .type-opt.active[data-type="phrase"]{border-color:var(--purple);color:var(--purple);background:#f5f0ff;}
+  .type-opt.active[data-type="sentence"]{border-color:var(--amber);color:var(--amber);background:#fef6e8;}
+
+  .badge{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:99px;margin-right:6px;vertical-align:2px;}
+  .badge.word{background:#eef2ff;color:var(--primary);}
+  .badge.phrase{background:#f5f0ff;color:var(--purple);}
+  .badge.sentence{background:#fef6e8;color:var(--amber);}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
+  .toolbar input{flex:1;min-width:130px;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.95rem;outline:none;}
+  .filter-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .chip{padding:6px 15px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;color:var(--sub);font-size:.82rem;font-weight:600;cursor:pointer;transition:.15s;}
+  .chip.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+  .empty{text-align:center;color:var(--sub);padding:44px 10px;font-size:.92rem;line-height:1.9;}
+
+  .word-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+  .word-card .w{font-size:1.15rem;font-weight:700;display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+  .word-card .w .txt{word-break:break-all;}
+  .word-card .w small{font-weight:400;color:var(--sub);font-size:.8rem;}
+  .word-card .m{color:var(--ink);margin-top:4px;font-size:.95rem;}
+  .word-card .ex{color:var(--sub);font-size:.85rem;margin-top:4px;font-style:italic;}
+  .word-card .date{font-size:.75rem;color:var(--amber);margin-top:6px;font-weight:600;}
+  .word-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+  .word-actions button{border:none;cursor:pointer;border-radius:8px;padding:6px 10px;font-size:.78rem;font-weight:600;}
+  .btn-del{background:#fdecec;color:var(--red);}
+  .btn-master{background:#e8f7ee;color:var(--green);}
+  .btn-unmaster{background:#fef3e2;color:var(--amber);}
+  .btn-edit{background:#e8edff;color:var(--primary);}
+  .edit-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff8e6;border:1.5px solid #ffd98a;color:#92610a;border-radius:10px;padding:10px 14px;font-size:.88rem;font-weight:600;margin-bottom:16px;}
+  .word-card.mastered{background:#eef1f6;opacity:.72;box-shadow:0 3px 10px rgba(30,41,59,.05);}
+  .word-card.mastered .w .txt{text-decoration:line-through;color:#8a94a6;}
+
+  /* 美音/英音小按钮 */
+  .acc-btn{display:inline-flex;align-items:center;gap:3px;border:none;cursor:pointer;border-radius:99px;padding:4px 10px;font-size:.72rem;font-weight:700;transition:.15s;flex-shrink:0;}
+  .acc-btn .ic{font-size:.8rem;}
+  .acc-btn.us{background:#eef2ff;color:var(--primary);}
+  .acc-btn.us:hover{background:var(--primary);color:#fff;}
+  .acc-btn.uk{background:#fdf1f3;color:#dc2626;}
+  .acc-btn.uk:hover{background:#dc2626;color:#fff;}
+  .acc-btn.playing{animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(79,110,247,.4);}50%{box-shadow:0 0 0 8px rgba(79,110,247,0);}}
+  .ex-line{display:flex;align-items:flex-start;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .ex-line .ex{flex:1;min-width:180px;}
+
+  .quiz-setup{text-align:center;padding:10px 0;}
+  .quiz-setup h3{margin-bottom:8px;}
+  .quiz-setup p{color:var(--sub);font-size:.9rem;margin-bottom:16px;}
+  .mode-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+  .mode-btns .btn{padding:12px 24px;font-size:.92rem;}
+  .scope-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;}
+  .acc-default{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;}
+  .acc-default .lbl{font-size:.85rem;color:var(--sub);font-weight:600;margin-right:4px;}
+  .sub-box{background:#f8fafc;border:1.5px solid #e6ecf5;border-radius:12px;padding:14px 16px;margin-bottom:12px;text-align:left;}
+  .sub-box .sub-title{font-size:.9rem;font-weight:700;margin-bottom:10px;}
+  .sub-box .sub-desc{font-size:.8rem;color:var(--sub);margin:-4px 0 10px;}
+  .wrong-box{background:#fff8f0;border-color:#ffe1c7;}
+  #btnWrongQuiz{background:var(--amber);color:#fff;}
+  .hist-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .hist-item{flex:1;min-width:100px;background:#fff;border:1.5px solid #e6ecf5;border-radius:10px;padding:8px 10px;text-align:center;}
+  .hist-item .v{font-weight:700;color:var(--primary);font-size:.95rem;}
+  .hist-item .k{font-size:.72rem;color:var(--sub);margin-top:2px;}
+  .hist-chart{display:flex;align-items:flex-end;gap:8px;height:112px;padding-top:20px;}
+  .hist-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;}
+  .hist-bar{width:100%;max-width:46px;background:#c7d2fe;border-radius:6px 6px 0 0;position:relative;transition:.2s;}
+  .hist-bar.today{background:var(--primary);}
+  .hist-bar span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:.66rem;color:var(--sub);white-space:nowrap;}
+  .hist-bar.today span{color:var(--primary);font-weight:700;}
+  .hist-lbl{font-size:.66rem;color:var(--sub);margin-top:4px;white-space:nowrap;}
+  .custom-list{max-height:260px;overflow-y:auto;border:1.5px solid #e6ecf5;border-radius:10px;background:#fff;}
+  .custom-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;font-size:.88rem;}
+  .custom-item:last-child{border-bottom:none;}
+  .custom-item:hover{background:#f8fafc;}
+  .custom-item input{accent-color:var(--primary);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+  .custom-item .cw{font-weight:700;word-break:break-all;}
+  .custom-item .cm{color:var(--sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .quiz-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px 22px;text-align:center;}
+  .quiz-tag{display:inline-block;background:#eef2ff;color:var(--primary);font-size:.75rem;font-weight:700;padding:4px 12px;border-radius:99px;margin-bottom:14px;}
+  .quiz-q{font-size:1.4rem;font-weight:700;margin:6px 0 20px;min-height:2rem;line-height:1.6;}
+  .quiz-q .zh{font-weight:500;}
+  .quiz-input{width:100%;padding:13px;border:2px solid #e2e8f0;border-radius:12px;font-size:1.1rem;text-align:center;outline:none;margin-bottom:14px;}
+  .quiz-input:focus{border-color:var(--primary);}
+  .quiz-input.ok{border-color:var(--green);background:#f0fbf4;}
+  .quiz-input.bad{border-color:var(--red);background:#fdf1f1;}
+  .quiz-feedback{min-height:1.6rem;font-size:.95rem;font-weight:600;margin-bottom:10px;}
+  .quiz-feedback.ok{color:var(--green);}
+  .quiz-feedback.bad{color:var(--red);}
+  .quiz-btns{display:flex;gap:10px;justify-content:center;}
+  .quiz-progress{color:var(--sub);font-size:.82rem;margin-bottom:12px;}
+  .quiz-result h2{color:var(--primary);margin-bottom:10px;}
+  .quiz-result p{color:var(--sub);margin-bottom:6px;}
+  .wrong-list{text-align:left;margin:16px auto 0;max-width:480px;}
+  .wrong-list li{background:#f8fafc;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.9rem;list-style:none;}
+
+  .speak-btn{display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer;background:#eef2ff;color:var(--primary);border-radius:50%;transition:.15s;flex-shrink:0;}
+  .speak-btn:hover{background:var(--primary);color:#fff;transform:scale(1.08);}
+  .speak-btn.lg{width:88px;height:88px;font-size:2.2rem;margin:8px auto;box-shadow:0 6px 18px rgba(79,110,247,.35);}
+  .speak-btn.lg:hover{background:var(--primary-d);}
+  .speak-btn.playing{animation:pulse 1s infinite;}
+  .q-line{display:flex;align-items:center;justify-content:center;gap:10px;}
+
+  footer{text-align:center;color:var(--sub);font-size:.78rem;margin-top:36px;}
+  @media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr);}header h1{font-size:1.4rem;}}
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f6ef7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="单词本">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📖 每日英语单词本</h1>
+    <p>每天存点单词、短语、句子，美音英音随便点听，随时默写巩固 · <span class="date-today" id="todayLabel"></span></p>
+  </header>
+
+  <div class="stats">
+    <div class="stat c-blue"><div class="num" id="statWords">0</div><div class="lbl">单词</div></div>
+    <div class="stat c-purple"><div class="num" id="statPhrases">0</div><div class="lbl">短语</div></div>
+    <div class="stat c-amber"><div class="num" id="statSentences">0</div><div class="lbl">句子</div></div>
+    <div class="stat c-green"><div class="num" id="statRate">--</div><div class="lbl">默写正确率</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="add">➕ 添加内容</button>
+    <button class="tab" data-tab="list">📚 我的收藏</button>
+    <button class="tab" data-tab="quiz">✍️ 默写挑战</button>
+  </div>
+
+  <!-- 添加 -->
+  <section class="panel active" id="panel-add">
+    <div class="card">
+      <div class="edit-banner" id="editBanner" style="display:none">✏️ 正在编辑：<b id="editWordName"></b><button class="btn btn-gray btn-sm" id="btnCancelEdit">取消编辑</button></div>
+      <div class="type-select" id="typeSelect">
+        <div class="type-opt active" data-type="word">🔤 单词</div>
+        <div class="type-opt" data-type="phrase">🔗 短语</div>
+        <div class="type-opt" data-type="sentence">💬 句子</div>
+      </div>
+      <div class="field">
+        <label id="lblEnglish">英文单词 *</label>
+        <div class="q-line" style="justify-content:flex-start">
+          <input id="inWord" style="flex:1" placeholder="例如：serendipity" autocomplete="off">
+          <button class="acc-btn us" id="btnPreviewUS" title="美式发音">🔊 US</button>
+          <button class="acc-btn uk" id="btnPreviewUK" title="英式发音">🔊 UK</button>
+        </div>
+      </div>
+      <div class="field">
+        <label id="lblMeaning">中文释义 *</label>
+        <input id="inMeaning" placeholder="例如：意外发现珍奇事物的运气" autocomplete="off">
+      </div>
+      <div class="field" id="fieldExample">
+        <label>例句（选填）</label>
+        <textarea id="inExample" rows="2" placeholder="例如：Meeting her was pure serendipity."></textarea>
+      </div>
+      <div class="field" id="fieldNote">
+        <label>备注（选填）</label>
+        <input id="inNote" placeholder="例如：名词，正式用语" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" id="btnAdd">保存</button>
+      <div class="hint" style="margin-top:10px" id="addHint">💡 每条内容的旁边都有 <b>🔊 US</b>（美式）和 <b>🔊 UK</b>（英式）两个按钮，想听哪个点哪个。</div>
+      <div class="msg" id="addMsg"></div>
+    </div>
+  </section>
+
+  <!-- 收藏列表 -->
+  <section class="panel" id="panel-list">
+    <div class="toolbar">
+      <input id="searchBox" placeholder="🔍 搜索英文、中文或备注…">
+      <button class="btn btn-gray btn-sm" id="btnExport">导出备份</button>
+      <button class="btn btn-gray btn-sm" onclick="document.getElementById('importFile').click()">导入</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+      <button class="btn btn-gray btn-sm" id="btnClear">清空</button>
+    </div>
+    <div class="filter-row" id="filterRow">
+      <button class="chip active" data-filter="all">全部 <span id="cntAll"></span></button>
+      <button class="chip" data-filter="word">🔤 单词</button>
+      <button class="chip" data-filter="phrase">🔗 短语</button>
+      <button class="chip" data-filter="sentence">💬 句子</button>
+      <button class="chip" data-filter="mastered">✅ 已掌握</button>
+    </div>
+    <div id="wordList"></div>
+  </section>
+
+  <!-- 默写挑战 -->
+  <section class="panel" id="panel-quiz">
+    <div class="quiz-setup" id="quizSetup">
+      <div class="card" style="margin-bottom:12px;text-align:center">
+        <h3 style="margin-bottom:6px">开始默写 ✍️</h3>
+        <p style="color:var(--sub);font-size:.88rem;margin-bottom:16px">三种模式，答完立即出成绩和错词回顾</p>
+        <div class="mode-btns" style="margin-bottom:0">
+          <button class="btn btn-primary" data-mode="zh2en">看中文 → 默英文</button>
+          <button class="btn btn-green" data-mode="en2zh">看英文 → 默中文</button>
+          <button class="btn" style="background:var(--purple);color:#fff" data-mode="ear2en">👂 听音默写</button>
+        </div>
+      </div>
+
+      <div class="sub-box">
+        <div class="sub-title">🎯 出题范围</div>
+        <div class="scope-row" id="scopeRow" style="margin-bottom:0;justify-content:flex-start">
+          <button class="chip active" data-scope="all">全部</button>
+          <button class="chip" data-scope="word">仅单词</button>
+          <button class="chip" data-scope="phrase">仅短语</button>
+          <button class="chip" data-scope="sentence">仅句子</button>
+          <button class="chip" data-scope="custom">✅ 自选</button>
+        </div>
+      </div>
+
+      <div class="sub-box" id="customBox" style="display:none">
+        <div class="sub-title">✅ 自选题目 <span class="badge word" id="customCount">已选 0 项</span></div>
+        <div class="quiz-btns" style="justify-content:flex-start;margin-bottom:10px">
+          <button class="btn btn-gray btn-sm" id="btnPickAll">全选</button>
+          <button class="btn btn-gray btn-sm" id="btnPickNone">清空选择</button>
+        </div>
+        <div class="custom-list" id="customList"></div>
+      </div>
+
+      <div class="sub-box">
+        <div class="sub-title">🔊 听音默写发音</div>
+        <div class="acc-default" id="quizAccent" style="justify-content:flex-start">
+          <button class="chip active" data-qaccent="en-US">🇺🇸 美式</button>
+          <button class="chip" data-qaccent="en-GB">🇬🇧 英式</button>
+        </div>
+      </div>
+
+      <div class="sub-box">
+        <div class="sub-title">📈 学习统计 <span class="badge word">保存近 35 天</span><button class="btn btn-gray btn-sm" id="btnResetStats" style="float:right;margin-top:-4px">清零统计</button></div>
+        <div class="hist-summary">
+          <div class="hist-item"><div class="v" id="histToday">--</div><div class="k">今日正确率</div></div>
+          <div class="hist-item"><div class="v" id="histWeek">--</div><div class="k">近 7 天</div></div>
+          <div class="hist-item"><div class="v" id="histMonth">--</div><div class="k">近 30 天</div></div>
+        </div>
+        <div class="hist-chart" id="histBars"></div>
+      </div>
+
+      <div class="sub-box wrong-box">
+        <div class="sub-title">📌 错题本 <span class="badge sentence" id="wrongCount">0 道</span></div>
+        <div class="sub-desc">每次默写答错的题会自动收集（连同当时的默写模式）；重测按原模式出题，答对后自动移除。</div>
+        <div class="quiz-btns" style="justify-content:flex-start">
+          <button class="btn" id="btnWrongQuiz" style="display:none">🔁 重测错题</button>
+          <span id="wrongEmpty" style="color:var(--sub);font-size:.85rem">🎉 暂无错题，太棒了！</span>
+          <button class="btn btn-gray btn-sm" id="btnClearWrong">清空</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="quiz-card" id="quizCard" style="display:none">
+      <div class="quiz-progress" id="quizProgress"></div>
+      <div class="quiz-tag" id="quizTag"></div>
+      <div class="quiz-q" id="quizQ"></div>
+      <input class="quiz-input" id="quizInput" autocomplete="off">
+      <div class="quiz-feedback" id="quizFeedback"></div>
+      <div class="quiz-btns">
+        <button class="btn btn-gray" id="btnSkip">跳过</button>
+        <button class="btn btn-primary" id="btnCheck">检查</button>
+        <button class="btn btn-green" id="btnNext" style="display:none">下一题 →</button>
+      </div>
+    </div>
+
+    <div class="quiz-card quiz-result" id="quizResult" style="display:none">
+      <h2 id="resultTitle"></h2>
+      <p id="resultScore"></p>
+      <p id="resultRate"></p>
+      <div class="wrong-list" id="wrongList"></div>
+      <div class="quiz-btns" style="margin-top:20px">
+        <button class="btn btn-green" id="btnRetestRound" style="display:none">🔁 重测本轮错题</button>
+        <button class="btn btn-gray" id="btnAgain">再来一轮</button>
+        <button class="btn btn-primary" id="btnBackSetup">返回</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>数据保存在本浏览器 localStorage 中 · 朗读使用浏览器内置语音（建议 Chrome / Edge）· 建议定期「导出备份」</footer>
+</div>
+
+<script>
+const STORE_KEY = 'dailyWords.v1';
+const QUIZ_KEY  = 'dailyWords.quiz.v1';
+const QACCENT_KEY = 'dailyWords.qaccent';
+const CUSTOM_KEY = 'dailyWords.custom.v1';
+const keyOf = w => w.type + '|' + norm(w.word);
+const TYPE_NAME = { word:'单词', phrase:'短语', sentence:'句子' };
+const TYPE_ICON = { word:'🔤', phrase:'🔗', sentence:'💬' };
+const ACCENT_NAME = { 'en-US':'🇺🇸 美式', 'en-GB':'🇬🇧 英式' };
+const todayStr = () => new Date().toLocaleDateString('sv');
+
+let words = JSON.parse(localStorage.getItem(STORE_KEY) || '[]').map(w => ({ type:'word', example:'', note:'', mastered:false, ...w }));
+/* 按天统计：{ 'YYYY-MM-DD': {a: 总题数, c: 答对数} }，保留近35天 */
+let dailyStats = JSON.parse(localStorage.getItem(QUIZ_KEY) || '{}');
+(function migrateOld(){
+  try {
+    const old = localStorage.getItem(QUIZ_KEY);
+    const data = old ? JSON.parse(old) : null;
+    if (data && typeof data.answered === 'number'){
+      const t = todayStr();
+      dailyStats[t] = dailyStats[t] || { a:0, c:0 };
+      dailyStats[t].a += data.answered;
+      dailyStats[t].c += data.correct || 0;
+    }
+  } catch(e){}
+  pruneStats();
+})();
+function pruneStats(){
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 35);
+  const min = cutoff.toLocaleDateString('sv');
+  Object.keys(dailyStats).forEach(k => { if (k < min) delete dailyStats[k]; });
+  localStorage.setItem(QUIZ_KEY, JSON.stringify(dailyStats));
+}
+function bumpStats(ok){
+  const t = todayStr();
+  dailyStats[t] = dailyStats[t] || { a:0, c:0 };
+  dailyStats[t].a++;
+  if (ok) dailyStats[t].c++;
+  pruneStats();
+}
+function rateOf(s){ return (s && s.a) ? Math.round(s.c / s.a * 100) : null; }
+function sumRange(days){
+  let a = 0, c = 0;
+  for (let i = 0; i < days; i++){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const s = dailyStats[d.toLocaleDateString('sv')];
+    if (s){ a += s.a; c += s.c; }
+  }
+  return { a, c };
+}
+const WRONG_KEY = 'dailyWords.wrong.v1';
+let wrongBook = JSON.parse(localStorage.getItem(WRONG_KEY) || '[]');
+const saveWrong = () => localStorage.setItem(WRONG_KEY, JSON.stringify(wrongBook));
+let qAccent = localStorage.getItem(QACCENT_KEY) || 'en-US';
+let curType = 'word', curFilter = 'all', curScope = 'all';
+let editIndex = null;
+let customSel = new Set(JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'));
+const saveCustom = () => localStorage.setItem(CUSTOM_KEY, JSON.stringify([...customSel]));
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const save = () => localStorage.setItem(STORE_KEY, JSON.stringify(words));
+const norm = s => s.toLowerCase().replace(/[\s.,!?;:'"，。！？；：""''-]/g,'');
+
+/* 编辑距离（Levenshtein）：计算两个词有多相似 */
+function lev(a, b){
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = Array.from({length: m + 1}, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return dp[m][n];
+}
+/* 模糊查重：返回完全重复 & 相似（可能拼错/重复添加）的条目 */
+function findSimilar(content){
+  const t = norm(content);
+  const exact = [], similar = [];
+  words.forEach((w, idx) => {
+    if (idx === editIndex) return;
+    const s = norm(w.word);
+    if (s === t){ exact.push({ w, idx }); return; }
+    if (!s || !t) return;
+    const d = lev(s, t);
+    const len = Math.max(s.length, t.length);
+    const tol = len <= 4 ? 1 : len <= 7 ? 2 : 3;
+    if (d <= tol) similar.push({ w, idx, d });
+    else if (len >= 5 && Math.abs(s.length - t.length) <= 2 && (s.includes(t) || t.includes(s))) similar.push({ w, idx, d });
+  });
+  similar.sort((a, b) => a.d - b.d);
+  return { exact, similar };
+}
+/* 中文释义匹配：按分隔符拆开后，输入与任意一段完全一致即算对 */
+function meaningMatch(ans, meaning){
+  const a = norm(ans);
+  if (!a) return false;
+  if (norm(meaning) === a) return true;
+  const segs = meaning.split(/[；;，,、.。·\/｜|（）()「」【】\[\]\s]+/)
+    .map(s => norm(s))
+    .filter(s => s.length >= 1);
+  return segs.some(s => s === a);
+}
+
+/* ================= 语音朗读（Web Speech API） ================= */
+let voicesCache = [];
+function loadVoices(){ voicesCache = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
+if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice(accent){
+  const vs = voicesCache.filter(v => v.lang && v.lang.toLowerCase().replace('_','-').startsWith('en'));
+  return vs.find(v => v.lang.replace('_','-') === accent)
+      || vs.find(v => /^en$/i.test(v.lang))
+      || vs[0] || null;
+}
+function speak(text, opts){
+  opts = opts || {};
+  if (!('speechSynthesis' in window)){ alert('你的浏览器不支持语音朗读，请使用 Chrome 或 Edge。'); return; }
+  if (!text || !text.trim()) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.trim());
+  u.lang = opts.accent || 'en-US';
+  u.rate = opts.rate || 0.9;
+  u.pitch = 1;
+  const v = pickVoice(u.lang); if (v) u.voice = v;
+  const btn = opts.btn;
+  if (btn){
+    btn.classList.add('playing');
+    u.onend = u.onerror = () => btn.classList.remove('playing');
+  }
+  speechSynthesis.speak(u);
+}
+/* 每条内容的美音/英音按钮 */
+/* 中文朗读：用于"看中文默英文"模式自动播放释义 */
+function speakCN(text){
+  if (!('speechSynthesis' in window)) return;
+  if (!text || !text.trim()) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.trim());
+  u.lang = 'zh-CN'; u.rate = 0.95; u.pitch = 1;
+  const v = voicesCache.find(v => v.lang && v.lang.toLowerCase().replace('_','-').startsWith('zh'));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+window.speakItem = (i, field, accent, el) => {
+  const w = words[i];
+  const text = field === 'ex' && w.example ? w.example : w.word;
+  speak(text, { accent, rate: field === 'ex' ? 0.95 : 0.85, btn: el });
+};
+
+/* 添加页试听 */
+$('btnPreviewUS').addEventListener('click', function(){ speak($('inWord').value, { accent:'en-US', rate:0.85, btn:this }); });
+$('btnPreviewUK').addEventListener('click', function(){ speak($('inWord').value, { accent:'en-GB', rate:0.85, btn:this }); });
+
+/* ---------- 顶部统计 ---------- */
+function renderStats(){
+  $('statWords').textContent = words.filter(w => w.type === 'word').length;
+  $('statPhrases').textContent = words.filter(w => w.type === 'phrase').length;
+  $('statSentences').textContent = words.filter(w => w.type === 'sentence').length;
+  const r = rateOf(dailyStats[todayStr()]);
+  $('statRate').textContent = r === null ? '--' : r + '%';
+  $('cntAll').textContent = '(' + words.length + ')';
+  if ($('histBars')) renderHistory();
+}
+$('btnResetStats').addEventListener('click', () => {
+  if (confirm('确定清零所有默写统计吗？\n（只清空正确率记录，不影响单词、短语和错题本）')){
+    dailyStats = {};
+    pruneStats();
+    renderStats();
+  }
+});
+function renderHistory(){
+  const t = todayStr();
+  const today = dailyStats[t];
+  $('histToday').textContent = rateOf(today) === null ? '--' : rateOf(today) + '%（' + today.c + '/' + today.a + '）';
+  const w7 = sumRange(7), m30 = sumRange(30);
+  $('histWeek').textContent = w7.a ? Math.round(w7.c / w7.a * 100) + '%（' + w7.c + '/' + w7.a + '）' : '--';
+  $('histMonth').textContent = m30.a ? Math.round(m30.c / m30.a * 100) + '%（' + m30.c + '/' + m30.a + '）' : '--';
+  let html = '';
+  for (let i = 6; i >= 0; i--){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toLocaleDateString('sv');
+    const s = dailyStats[key];
+    const r = rateOf(s);
+    const h = r === null ? 5 : Math.max(10, r);
+    const cls = key === t ? 'hist-bar today' : 'hist-bar';
+    const cnt = s ? (s.c + '/' + s.a) : '0/0';
+    html += `<div class="hist-col" title="${key}：${r === null ? '未默写' : r + '%'}（答对 ${cnt}）">
+      <div class="${cls}" style="height:${h}%"><span>${r === null ? '' : r + '%'}</span></div>
+      <div class="hist-lbl">${d.getMonth() + 1}/${d.getDate()}</div>
+    </div>`;
+  }
+  $('histBars').innerHTML = html;
+}
+
+/* ---------- 标签页切换 ---------- */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  $('panel-' + t.dataset.tab).classList.add('active');
+  if (t.dataset.tab === 'quiz') resetQuizView();
+}));
+
+/* ---------- 类型选择 ---------- */
+document.querySelectorAll('.type-opt').forEach(o => o.addEventListener('click', () => {
+  document.querySelectorAll('.type-opt').forEach(x => x.classList.remove('active'));
+  o.classList.add('active');
+  curType = o.dataset.type;
+  const isSentence = curType === 'sentence';
+  $('lblEnglish').textContent = curType === 'word' ? '英文单词 *' : curType === 'phrase' ? '英文短语 *' : '英文句子 *';
+  $('inWord').placeholder = curType === 'word' ? '例如：serendipity' : curType === 'phrase' ? '例如：look forward to' : '例如：Practice makes perfect.';
+  $('lblMeaning').textContent = curType === 'word' ? '中文释义 *' : '中文意思 *';
+  $('inMeaning').placeholder = curType === 'word' ? '例如：意外发现珍奇事物的运气' : curType === 'phrase' ? '例如：期待，盼望' : '例如：熟能生巧';
+  $('fieldExample').style.display = isSentence ? 'none' : '';
+  $('fieldNote').style.display = isSentence ? 'none' : '';
+}));
+
+/* ---------- 添加 ---------- */
+function showMsg(el, text, ok){
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.textContent = text;
+  setTimeout(() => el.className = 'msg', 2600);
+}
+function resetEdit(){
+  editIndex = null;
+  $('editBanner').style.display = 'none';
+  $('btnAdd').textContent = '保存';
+  $('inWord').value = $('inMeaning').value = $('inExample').value = $('inNote').value = '';
+}
+window.editWord = i => {
+  const w = words[i];
+  editIndex = i;
+  curType = w.type;
+  document.querySelectorAll('.type-opt').forEach(x => x.classList.toggle('active', x.dataset.type === w.type));
+  const isSentence = curType === 'sentence';
+  $('lblEnglish').textContent = curType === 'word' ? '英文单词 *' : curType === 'phrase' ? '英文短语 *' : '英文句子 *';
+  $('lblMeaning').textContent = curType === 'word' ? '中文释义 *' : '中文意思 *';
+  $('inWord').value = w.word;
+  $('inMeaning').value = w.meaning;
+  $('fieldExample').style.display = isSentence ? 'none' : '';
+  $('fieldNote').style.display = isSentence ? 'none' : '';
+  $('inExample').value = w.example || '';
+  $('inNote').value = w.note || '';
+  $('editWordName').textContent = w.word;
+  $('editBanner').style.display = 'flex';
+  $('btnAdd').textContent = '保存修改';
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+  document.querySelector('[data-tab="add"]').classList.add('active');
+  $('panel-add').classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+$('btnCancelEdit').addEventListener('click', resetEdit);
+
+$('btnAdd').addEventListener('click', () => {
+  const content = $('inWord').value.trim();
+  const meaning = $('inMeaning').value.trim();
+  if (!content || !meaning) return showMsg($('addMsg'), '请填写英文内容和中文意思 ✏️', false);
+  const dup = findSimilar(content);
+  if (dup.exact.length){
+    const e = dup.exact[0];
+    if (confirm(`你的收藏里已有完全相同的内容：\n「${e.w.word}」— ${e.w.meaning}\n\n点"确定"直接编辑这条（可修改类型/释义），点"取消"重新输入`)){
+      editWord(e.idx);
+    }
+    return;
+  }
+  if (dup.similar.length){
+    const list = dup.similar.slice(0, 3).map(x => `「${x.w.word}」— ${x.w.meaning}`).join('\n');
+    if (!confirm(`⚠️ 你的收藏里已有相似内容：\n${list}\n\n确定仍要添加「${content}」吗？\n（如果是拼写错误，点"取消"后检查已有条目）`)) return;
+  }
+  if (editIndex !== null){
+    const w = words[editIndex];
+    w.type = curType; w.word = content; w.meaning = meaning;
+    w.example = curType === 'sentence' ? '' : $('inExample').value.trim();
+    w.note = curType === 'sentence' ? '' : $('inNote').value.trim();
+    save(); renderStats(); renderList();
+    showMsg($('addMsg'), `已修改「${content.length > 24 ? content.slice(0,24)+'…' : content}」✅ 可以在「我的收藏」查看`, true);
+    resetEdit();
+    return;
+  }
+  words.unshift({
+    type: curType, word: content, meaning,
+    example: curType === 'sentence' ? '' : $('inExample').value.trim(),
+    note: curType === 'sentence' ? '' : $('inNote').value.trim(),
+    date: todayStr(), mastered: false
+  });
+  save(); renderStats(); renderList();
+  $('inWord').value = $('inMeaning').value = $('inExample').value = $('inNote').value = '';
+  showMsg($('addMsg'), `已保存${TYPE_NAME[curType]}「${content.length > 24 ? content.slice(0,24)+'…' : content}」！点 🔊 US / 🔊 UK 听听发音吧 💪`, true);
+  $('inWord').focus();
+});
+
+/* 智能提醒：输入时实时检测重复 / 相似 / 多词 */
+const HINT_DEFAULT = '💡 每条内容的旁边都有 <b>🔊 US</b>（美式）和 <b>🔊 UK</b>（英式）两个按钮，想听哪个点哪个。';
+$('inWord').addEventListener('input', () => {
+  const v = $('inWord').value.trim();
+  const hint = $('addHint');
+  if (v.length >= 2){
+    const dup = findSimilar(v);
+    if (dup.exact.length){
+      hint.innerHTML = `⚠️ 收藏里已有「<b>${esc(dup.exact[0].w.word)}</b>」（${esc(dup.exact[0].w.meaning)}），请勿重复添加`;
+      return;
+    }
+    if (dup.similar.length){
+      hint.innerHTML = `⚠️ 已有相似内容：${dup.similar.slice(0,2).map(x => '「<b>' + esc(x.w.word) + '</b>」').join('、')}，确认不是同一个词再保存`;
+      return;
+    }
+  }
+  if (curType === 'word' && /\s/.test(v))
+    hint.innerHTML = '⚠️ 检测到你输入了多个词，这更像是「🔗 短语」或「💬 句子」，建议点上方类型切换一下';
+  else
+    hint.innerHTML = HINT_DEFAULT;
+});
+['inWord','inMeaning','inExample','inNote'].forEach(id =>
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter' && id !== 'inExample') $('btnAdd').click(); }));
+
+/* ---------- 列表 ---------- */
+document.querySelectorAll('#filterRow .chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('#filterRow .chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active');
+  curFilter = c.dataset.filter;
+  renderList();
+}));
+
+function accBtns(i, field, tiny){
+  const s = tiny ? ' style="padding:2px 8px;font-size:.66rem"' : '';
+  return `<button class="acc-btn us"${s} onclick="speakItem(${i},'${field||''}','en-US',this)" title="美式发音">🔊 US</button>` +
+         `<button class="acc-btn uk"${s} onclick="speakItem(${i},'${field||''}','en-GB',this)" title="英式发音">🔊 UK</button>`;
+}
+
+function renderList(){
+  const kw = $('searchBox').value.trim().toLowerCase();
+  let list = words;
+  if (curFilter === 'mastered') list = list.filter(w => w.mastered);
+  else if (curFilter !== 'all') list = list.filter(w => w.type === curFilter);
+  if (kw) list = list.filter(w => w.word.toLowerCase().includes(kw) || w.meaning.toLowerCase().includes(kw) || (w.note||'').toLowerCase().includes(kw));
+  if (!list.length){
+    $('wordList').innerHTML = `<div class="empty">📭 ${kw ? '没有找到匹配的内容' : '这里还是空的<br>先去「添加内容」存一个今天的单词、短语或句子吧！'}</div>`;
+    return;
+  }
+  $('wordList').innerHTML = list.map(w => {
+    const i = words.indexOf(w);
+    return `<div class="word-card ${w.mastered ? 'mastered' : ''}">
+      <div style="flex:1;min-width:0">
+        <div class="w"><span class="badge ${w.type}">${TYPE_ICON[w.type]} ${TYPE_NAME[w.type]}</span>${accBtns(i)}<span class="txt">${esc(w.word)}</span>${w.note ? `<small>${esc(w.note)}</small>` : ''}</div>
+        <div class="m">${esc(w.meaning)}</div>
+        ${w.example ? `<div class="ex-line">${accBtns(i,'ex',true)}<div class="ex">“${esc(w.example)}”</div></div>` : ''}
+        <div class="date">📅 ${w.date}${w.date === todayStr() ? ' · 今天' : ''}</div>
+      </div>
+      <div class="word-actions">
+        <button class="btn-edit" onclick="editWord(${i})">编辑</button>
+        <button class="${w.mastered ? 'btn-unmaster' : 'btn-master'}" onclick="toggleMaster(${i})">${w.mastered ? '取消掌握' : '已掌握'}</button>
+        <button class="btn-del" onclick="delWord(${i})">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.toggleMaster = i => { words[i].mastered = !words[i].mastered; save(); renderList(); };
+window.delWord = i => { if (confirm(`确定删除「${words[i].word}」吗？`)){ words.splice(i,1); save(); renderStats(); renderList(); } };
+$('searchBox').addEventListener('input', renderList);
+
+/* ---------- 备份 ---------- */
+$('btnExport').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(words, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `english-backup-${todayStr()}.json`;
+  a.click();
+});
+$('importFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      if (!Array.isArray(data)) throw 0;
+      let n = 0;
+      data.forEach(d => {
+        const type = ['word','phrase','sentence'].includes(d.type) ? d.type : 'word';
+        if (d.word && d.meaning && !words.some(w => norm(w.word) === norm(String(d.word)))){
+          words.push({ type, word:String(d.word), meaning:String(d.meaning), example:String(d.example||''), note:String(d.note||''), date:d.date || todayStr(), mastered:!!d.mastered });
+          n++;
+        }
+      });
+      save(); renderStats(); renderList();
+      alert(`成功导入 ${n} 条内容！`);
+    } catch { alert('文件格式不正确，请选择之前导出的备份文件。'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+});
+$('btnClear').addEventListener('click', () => {
+  if (words.length && confirm('确定清空所有内容吗？此操作不可恢复！建议先导出备份。')){
+    words = []; save(); renderStats(); renderList();
+  }
+});
+
+/* ---------- 默写挑战 ---------- */
+let quiz = { mode:null, queue:[], idx:0, correct:0, wrong:[] };
+const MODE_NAME = { zh2en:'中 → 英', en2zh:'英 → 中', ear2en:'👂 听音默写', wrongRetest:'🔁 错题重测' };
+
+function resetQuizView(){
+  $('quizSetup').style.display = 'block';
+  $('quizCard').style.display = 'none';
+  $('quizResult').style.display = 'none';
+}
+function renderWrongBox(){
+  const n = wrongBook.length;
+  $('wrongCount').textContent = n + ' 道';
+  $('btnWrongQuiz').style.display = n ? '' : 'none';
+  $('wrongEmpty').style.display = n ? 'none' : '';
+}
+function startWrongQuiz(queueOverride){
+  const q = queueOverride || wrongBook;
+  if (!q.length) return;
+  quiz = { mode:'wrongRetest', queue: shuffle(q), idx:0, correct:0, wrong:[] };
+  $('quizSetup').style.display = 'none';
+  $('quizResult').style.display = 'none';
+  $('quizCard').style.display = 'block';
+  nextQuestion();
+}
+$('btnWrongQuiz').addEventListener('click', () => startWrongQuiz());
+$('btnClearWrong').addEventListener('click', () => {
+  if (wrongBook.length && confirm('确定清空错题本吗？建议先重测一遍再清空。')){
+    wrongBook = []; saveWrong(); renderWrongBox();
+  }
+});
+$('btnRetestRound').addEventListener('click', () => startWrongQuiz(quiz.wrong));
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => startQuiz(b.dataset.mode)));
+document.querySelectorAll('#scopeRow .chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('#scopeRow .chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active');
+  curScope = c.dataset.scope;
+  $('customBox').style.display = curScope === 'custom' ? '' : 'none';
+  if (curScope === 'custom') renderCustomList();
+}));
+function updateCustomCount(){ $('customCount').textContent = '已选 ' + customSel.size + ' 项'; }
+function renderCustomList(){
+  if (!words.length){
+    $('customList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--sub);font-size:.85rem">收藏是空的，先去添加内容吧</div>';
+    updateCustomCount();
+    return;
+  }
+  $('customList').innerHTML = words.map(w => `
+    <label class="custom-item">
+      <input type="checkbox" data-k="${esc(keyOf(w))}" ${customSel.has(keyOf(w)) ? 'checked' : ''}>
+      <span class="badge ${w.type}">${TYPE_NAME[w.type]}</span>
+      <span class="cw">${esc(w.word)}</span>
+      <span class="cm">${esc(w.meaning)}</span>
+    </label>`).join('');
+  updateCustomCount();
+}
+$('customList').addEventListener('change', e => {
+  const k = e.target.dataset.k;
+  if (!k) return;
+  if (e.target.checked) customSel.add(k); else customSel.delete(k);
+  saveCustom(); updateCustomCount();
+});
+$('btnPickAll').addEventListener('click', () => { words.forEach(w => customSel.add(keyOf(w))); saveCustom(); renderCustomList(); });
+$('btnPickNone').addEventListener('click', () => { customSel.clear(); saveCustom(); renderCustomList(); });
+document.querySelectorAll('#quizAccent .chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('#quizAccent .chip').forEach(x => x.classList.remove('active'));
+  c.classList.add('active');
+  qAccent = c.dataset.qaccent;
+  localStorage.setItem(QACCENT_KEY, qAccent);
+}));
+(function initQAccent(){
+  document.querySelectorAll('#quizAccent .chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.qaccent === qAccent));
+})();
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function startQuiz(mode){
+  let pool;
+  if (curScope === 'custom'){
+    pool = words.filter(w => customSel.has(keyOf(w)));
+    if (!pool.length){ alert('你还没有自选题目，请先在下方勾选要默写的内容'); return; }
+  } else if (curScope === 'all'){
+    pool = words;
+  } else {
+    pool = words.filter(w => w.type === curScope);
+  }
+  const fresh = pool.filter(w => !w.mastered);
+  if (fresh.length >= 4) pool = fresh;
+  if (pool.length < 1){ alert('该范围内没有内容，先去添加吧！'); return; }
+  quiz = { mode, queue: shuffle(pool), idx:0, correct:0, wrong:[] };
+  $('quizSetup').style.display = 'none';
+  $('quizResult').style.display = 'none';
+  $('quizCard').style.display = 'block';
+  nextQuestion();
+}
+
+window.speakText = (fieldId, accent, el) => {
+  const w = quiz.queue[quiz.idx];
+  if (!w) return;
+  const text = fieldId === 'ex' && w.example ? w.example : w.word;
+  speak(text, { accent, rate: fieldId === 'ex' ? 0.95 : 0.85, btn: el });
+};
+
+function nextQuestion(){
+  if (quiz.idx >= quiz.queue.length) return showResult();
+  const w = quiz.queue[quiz.idx];
+  $('quizProgress').textContent = `第 ${quiz.idx+1} / ${quiz.queue.length} 题`;
+  const qm = quiz.mode === 'wrongRetest' ? (w.quizMode || 'zh2en') : quiz.mode;
+  $('quizTag').textContent = quiz.mode === 'wrongRetest'
+    ? `${TYPE_ICON[w.type]} ${TYPE_NAME[w.type]} · ${MODE_NAME.wrongRetest}（原模式：${MODE_NAME[qm] || qm}）`
+    : `${TYPE_ICON[w.type]} ${TYPE_NAME[w.type]} · ${MODE_NAME[quiz.mode]}`;
+  const inp = $('quizInput');
+  inp.value = ''; inp.readOnly = false;
+  inp.className = 'quiz-input';
+  $('quizFeedback').textContent = ''; $('quizFeedback').className = 'quiz-feedback';
+  $('btnCheck').style.display = ''; $('btnNext').style.display = 'none';
+  const acc = (quiz.mode === 'wrongRetest' && w.quizAccent) ? w.quizAccent : qAccent;
+  if (qm === 'ear2en'){
+    $('quizQ').innerHTML = `<button class="speak-btn lg" id="btnReplay" title="点击播放（${ACCENT_NAME[acc]}）">🔊</button>
+      <div style="font-size:.85rem;color:var(--sub)">听发音，写出你听到的英文（${ACCENT_NAME[acc]}，点击喇叭可重播）</div>`;
+    $('btnReplay').addEventListener('click', function(){ speak(w.word, { accent:acc, rate:0.85, btn:this }); });
+    setTimeout(() => speak(w.word, { accent:acc, rate:0.85 }), 250);
+  } else {
+    if (qm === 'zh2en'){
+      $('quizQ').innerHTML = `<span class="zh">${esc(w.meaning)}</span>`;
+      setTimeout(() => speakCN(w.meaning), 300);   /* 显示中文 → 自动朗读中文 */
+    } else {
+      $('quizQ').innerHTML = `<span>${esc(w.word)}</span>`;
+      setTimeout(() => speak(w.word, { accent:acc, rate:0.85 }), 300);  /* 显示英文 → 按预选口音自动朗读 */
+    }
+    setTimeout(() => inp.focus(), 50);
+  }
+}
+
+function checkAnswer(){
+  const w = quiz.queue[quiz.idx];
+  const inp = $('quizInput');
+  const ans = inp.value.trim();
+  if (!ans) return;
+  const qm = quiz.mode === 'wrongRetest' ? (w.quizMode || 'zh2en') : quiz.mode;
+  const ok = qm === 'en2zh'
+    ? meaningMatch(ans, w.meaning)
+    : norm(ans) === norm(w.word);
+  bumpStats(ok);
+  renderStats();
+  inp.readOnly = true;   /* 只读但保留焦点，Enter 才能继续触发"下一题" */
+  const fb = qm === 'en2zh' ? '' : `<button class="acc-btn us" onclick="speakText('word','en-US',this)">🔊 US</button> <button class="acc-btn uk" onclick="speakText('word','en-GB',this)">🔊 UK</button>`;
+  if (ok){
+    if (quiz.mode === 'wrongRetest'){
+      wrongBook = wrongBook.filter(x => norm(x.word) !== norm(w.word));
+      saveWrong(); renderWrongBox();
+    }
+    quiz.correct++;
+    inp.classList.add('ok');
+    $('quizFeedback').className = 'quiz-feedback ok';
+    $('quizFeedback').innerHTML = `✅ 正确！ ${fb}`;
+  } else {
+    quiz.wrong.push(w);
+    inp.classList.add('bad');
+    $('quizFeedback').className = 'quiz-feedback bad';
+    $('quizFeedback').innerHTML = `❌ 正确答案：<b>${esc(qm === 'en2zh' ? w.meaning : w.word)}</b> ${fb}`;
+  }
+  quiz.idx++;
+  $('btnCheck').style.display = 'none';
+  $('btnNext').style.display = '';
+  $('btnNext').textContent = quiz.idx >= quiz.queue.length ? '查看成绩 🏁' : '下一题 →';
+}
+
+function showResult(){
+  $('quizCard').style.display = 'none';
+  $('quizResult').style.display = 'block';
+  const total = quiz.queue.length, c = quiz.correct, rate = total ? Math.round(c/total*100) : 0;
+  $('resultTitle').textContent = rate === 100 ? '🏆 满分，太强了！' : rate >= 60 ? '👍 不错，继续加油！' : '💪 别灰心，多复习几遍！';
+  $('resultScore').textContent = `本轮成绩：${c} / ${total}`;
+  $('resultRate').textContent = `正确率：${rate}%`;
+  $('btnRetestRound').style.display = quiz.wrong.length ? '' : 'none';
+  quiz.wrong.forEach(w => {
+    if (!wrongBook.some(x => norm(x.word) === norm(w.word)))
+      wrongBook.push({ ...w,
+        quizMode: quiz.mode === 'wrongRetest' ? (w.quizMode || 'zh2en') : quiz.mode,
+        quizAccent: qAccent });
+  });
+  saveWrong(); renderWrongBox();
+  $('wrongList').innerHTML = quiz.wrong.length
+    ? '<h4 style="margin-bottom:8px;color:var(--sub)">📌 本轮错题回顾：</h4>' + quiz.wrong.map((w,i) =>
+        `<li><span class="badge ${w.type}">${TYPE_NAME[w.type]}</span><button class="acc-btn us" onclick="speakWrong(${i},'en-US',this)">🔊 US</button> <button class="acc-btn uk" onclick="speakWrong(${i},'en-GB',this)">🔊 UK</button> <b>${esc(w.word)}</b> — ${esc(w.meaning)}</li>`).join('')
+    : '<p>🎉 零失误，全部默写正确！</p>';
+}
+/* 错词列表用的是 quiz.wrong 的索引，单独处理 */
+window.speakWrong = (i, accent, el) => {
+  const w = quiz.wrong[i];
+  if (w) speak(w.word, { accent, rate:0.85, btn:el });
+};
+
+$('btnCheck').addEventListener('click', checkAnswer);
+$('btnNext').addEventListener('click', nextQuestion);
+$('btnSkip').addEventListener('click', () => {
+  quiz.wrong.push(quiz.queue[quiz.idx]);
+  quiz.idx++;
+  bumpStats(false);
+  renderStats();
+  nextQuestion();
+});
+$('quizInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){
+    if ($('btnCheck').style.display !== 'none') checkAnswer();
+    else if ($('btnNext').style.display !== 'none') nextQuestion();
+  }
+});
+$('btnAgain').addEventListener('click', () => startQuiz(quiz.mode));
+$('btnBackSetup').addEventListener('click', resetQuizView);
+
+/* ---------- 初始化 ---------- */
+$('todayLabel').textContent = new Date().toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+renderStats();
+renderList();
+renderWrongBox();
+</script>
+<script>
+/* PWA：注册离线缓存（仅 http/https 环境生效） */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
